@@ -48,6 +48,38 @@ export class Eva {
       }
     }
 
+    if (exp[0] === '*') {
+      return this.eval(exp[1], env) * this.eval(exp[2], env);
+    }
+
+    if (exp[0] === '/') {
+      return this.eval(exp[1], env) / this.eval(exp[2], env);
+    }
+
+    if (exp[0] === '=') {
+      return this.eval(exp[1], env) === this.eval(exp[2], env);
+    }
+
+    if (exp[0] === '!=') {
+      return this.eval(exp[1], env) !== this.eval(exp[2], env);
+    }
+
+    if (exp[0] === '>') {
+      return this.eval(exp[1], env) > this.eval(exp[2], env);
+    }
+
+    if (exp[0] === '>=') {
+      return this.eval(exp[1], env) >= this.eval(exp[2], env);
+    }
+
+    if (exp[0] === '<') {
+      return this.eval(exp[1], env) < this.eval(exp[2], env);
+    }
+
+    if (exp[0] === '<=') {
+      return this.eval(exp[1], env) <= this.eval(exp[2], env);
+    }
+
     /**
      * Variable declaration: (var foo 10)
      */
@@ -76,6 +108,30 @@ export class Eva {
      */
     if (isVariableName(exp)) {
       return env.lookup(exp);
+    }
+
+    /**
+     * if-expression
+     */
+    if (exp[0] === 'if') {
+      const [, condition, consequent, alternate] = exp;
+      if (this.eval(condition, env)) {
+        return this.eval(consequent, env);
+      } else {
+        return this.eval(alternate, env);
+      }
+    }
+
+    /**
+     * while-expression
+     */
+    if (exp[0] === 'while') {
+      const [, condition, body] = exp;
+      let result;
+      while (this.eval(condition, env)) {
+        result = this.eval(body, env);
+      }
+      return result;
     }
 
     throw `Unimplemented: ${JSON.stringify(exp, undefined, 2)}`;
