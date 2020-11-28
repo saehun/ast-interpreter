@@ -37,11 +37,26 @@ export class Eva {
     }
 
     /**
-     * Variable declaration
+     * Variable declaration: (var foo 10)
      */
     if (exp[0] === 'var') {
       const [, name, value] = exp;
-      return env.define(name, this.eval(value));
+      return env.define(name, this.eval(value, env));
+    }
+
+    /**
+     * Variable update: (set foo 10)
+     */
+    if (exp[0] === 'set') {
+      const [, name, value] = exp;
+      return env.assign(name, this.eval(value, env));
+    }
+
+    /**
+     * Block sequence of expressions
+     */
+    if (exp[0] === 'begin') {
+      return this.evaluateBlock(exp, new Environment({}, env));
     }
 
     /**
@@ -52,6 +67,15 @@ export class Eva {
     }
 
     throw `Unimplemented: ${JSON.stringify(exp, undefined, 2)}`;
+  }
+
+  private evaluateBlock(exp: any, env: Environment) {
+    const [, ...expressions] = exp;
+    let result: any;
+    expressions.forEach((exp: any) => {
+      result = this.eval(exp, env);
+    });
+    return result;
   }
 }
 

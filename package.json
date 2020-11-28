@@ -10,6 +10,7 @@
     "test": "NODE_ENV=test jest",
     "lint": "eslint . --ext .js,.ts",
     "start": "ts-node src/index.ts",
+    "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
     "start:debug": "node --require ts-node/register --inspect-brk src/index.ts"
   },
   "author": {

@@ -25,4 +25,16 @@ test('', () => {
 
   expect(eva.eval('VERSION')).toEqual('0.1');
   expect(eva.eval(['var', 'isUser', 'true'])).toEqual(true);
+
+  expect(eva.eval(['begin', ['var', 'x', 10], ['var', 'y', 20], ['+', 'x', 'y']])).toEqual(30);
+  expect(eva.eval(['begin', ['var', 'x', 10], ['begin', ['var', 'x', 20]], 'x'])).toEqual(10);
+  expect(
+    eva.eval([
+      'begin',
+      ['var', 'value', 10],
+      ['var', 'result', ['begin', ['var', 'x', ['+', 'value', 10]], 'x']],
+      'result',
+    ])
+  ).toEqual(20);
+  expect(eva.eval(['begin', ['var', 'data', 10], ['begin', ['set', 'data', 20]], 'data'])).toEqual(20);
 });
