@@ -1,5 +1,4 @@
-import { Eva } from '..';
-const eva = new Eva();
+import { run } from './runner';
 
 /**
  * (if <condition>
@@ -7,37 +6,36 @@ const eva = new Eva();
  *     <alternate>)
  */
 describe('If expression of Eva', () => {
-  it('can handle branch', () => {
-    expect(
-      eva.eval([
-        'begin',
-        ['var', 'x', 10],
-        ['var', 'y', 0],
-        ['if', ['>', 'x', 10], ['set', 'y', 20], ['set', 'y', 30]],
-        'y',
-      ])
-    ).toEqual(30);
-  });
+  run(
+    'can handle branch',
+    `(begin
+        (var x 10)
+        (var y 10)
+        (if (> x 10)
+            (set y 20)
+            (set y 30))
+        y)
+    `,
+    30
+  );
 });
 
 /**
  * (while <condition>
-<>)
+ *        <body>)
  */
 describe('While expression of Eva', () => {
-  it('can loop', () => {
-    expect(
-      eva.eval([
-        'begin',
-        ['var', 'counter', 0],
-        ['var', 'result', 1],
-        [
-          'while',
-          ['<', 'counter', 10],
-          ['begin', ['set', 'result', ['*', 'result', 2]], ['set', 'counter', ['+', 'counter', 1]]],
-        ],
-        'result',
-      ])
-    ).toEqual(1024);
-  });
+  run(
+    'can loop over',
+    `(begin
+        (var counter 0)
+        (var result 1)
+        (while (< counter 10)
+            (begin
+                (set result (* result 2))
+                (set counter (+ counter 1))))
+        result)
+    `,
+    1024
+  );
 });
