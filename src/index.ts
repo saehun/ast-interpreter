@@ -6,7 +6,14 @@ export class Eva {
   /**
    * Creates an Evan instance with the global environment.
    */
-  constructor(global = new Environment()) {
+  constructor(
+    global = new Environment({
+      null: null,
+      true: true,
+      false: false,
+      VERSION: '0.1',
+    })
+  ) {
     this.global = global;
   }
 
@@ -33,7 +40,12 @@ export class Eva {
     }
 
     if (exp[0] === '-') {
-      return this.eval(exp[1], env) - this.eval(exp[2], env);
+      const [, left, right] = exp;
+      if (right === undefined) {
+        return 0 - this.eval(left, env);
+      } else {
+        return this.eval(left, env) - this.eval(right, env);
+      }
     }
 
     /**
