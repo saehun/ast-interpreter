@@ -85,13 +85,21 @@ export class Eva {
     if (exp[0] === 'def') {
       const [, name, params, body] = exp;
 
-      const fn = {
+      // JIT-transpile to a variable declaration
+      const varExp = ['var', name, ['lambda', params, body]];
+      return this.eval(varExp, env);
+    }
+
+    /**
+     * Lambda function: (lambda (x) (* x x))
+     */
+    if (exp[0] === 'lambda') {
+      const [, params, body] = exp;
+      return {
         params,
         body,
-        env, // Closure
+        env,
       };
-
-      return env.define(name, fn);
     }
 
     /**
