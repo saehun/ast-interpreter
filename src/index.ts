@@ -14,6 +14,13 @@ export class Eva {
   }
 
   /**
+   * Evaluates global code wrapping into a block.
+   */
+  evalGlobal(exp: any): any {
+    return this.evalBody(exp, this.global);
+  }
+
+  /**
    * Evaluate an expression in the given environment.
    */
   eval(exp: any, env = this.global): any {
@@ -47,8 +54,17 @@ export class Eva {
      * Variable update: (set foo 10)
      */
     if (exp[0] === 'set') {
-      const [, name, value] = exp;
-      return env.assign(name, this.eval(value, env));
+      const [, ref, value] = exp;
+
+      // Assignment to a property:
+      if (ref[0] === 'prop') {
+        const [, instance, propName] = ref;
+        const instanceEnv = this.eval(instance, env);
+        return instanceEnv.define(propName, this.eval(value, env));
+      }
+
+      // Simple assignment:
+      return env.assign(ref, this.eval(value, env));
     }
 
     /**
@@ -120,6 +136,49 @@ export class Eva {
     }
 
     /**
+     * Class declaration: (class <name> <parent> <body>)
+     */
+    if (exp[0] === 'class') {
+      const [, name, parent, body] = exp;
+
+      const parentEnv = this.eval(parent, env) || env;
+      const classEnv = new Environment({}, parentEnv);
+
+      this.evalBody(body, classEnv);
+
+      return env.define(name, classEnv);
+    }
+
+    /**
+     * Class instanciation: (new <Class> <Argument>...)
+     */
+    if (exp[0] === 'new') {
+      const [, className, ...args] = exp;
+
+      const classEnv = this.eval(className);
+      // An instance of a class is an environment
+      // The `parent` component of the instance environment
+      // is set to its class.
+      const instanceEnv = new Environment({}, classEnv);
+      const constructorArgs = args.map((arg: any) => this.eval(arg, env));
+
+      this.callUserDefinedFunction(
+        classEnv.lookup('constructor'),
+        [instanceEnv, ...constructorArgs] // (constructor instance arg1 arg2 ...)
+      );
+      return instanceEnv;
+    }
+
+    /**
+     * Property access: (prop <instance> <name>)
+     */
+    if (exp[0] === 'prop') {
+      const [, instance, name] = exp;
+      const instanceEnv = this.eval(instance, env);
+      return instanceEnv.lookup(name);
+    }
+
+    /**
      * Function calls
      */
     if (Array.isArray(exp)) {
@@ -132,25 +191,13 @@ export class Eva {
       }
 
       // 2. User defined function
-      if (typeof fn === 'object') {
-        const activationRecord: Record<string, any> = {};
-        fn.params.forEach((param: any, index: number) => {
-          activationRecord[param] = args[index];
-        });
-
-        const activationEnv = new Environment(
-          activationRecord,
-          fn.env // Lexical scope. if 'env' passed it will become dynamic scope
-        );
-
-        return this.evalFunctionBody(fn.body, activationEnv);
-      }
+      return this.callUserDefinedFunction(fn, args);
     }
 
     throw `Unimplemented: ${JSON.stringify(exp, undefined, 2)}`;
   }
 
-  private evalFunctionBody(body: any, env: Environment): any {
+  private evalBody(body: any, env: Environment): any {
     if (body[0] === 'begin') {
       return this.evalBlock(body, env);
     } else {
@@ -165,6 +212,20 @@ export class Eva {
       result = this.eval(exp, env);
     });
     return result;
+  }
+
+  private callUserDefinedFunction(fn: any, args: any[]) {
+    const activationRecord: Record<string, any> = {};
+    fn.params.forEach((param: any, index: number) => {
+      activationRecord[param] = args[index];
+    });
+
+    const activationEnv = new Environment(
+      activationRecord,
+      fn.env // Lexical scope. if 'env' passed it will become dynamic scope
+    );
+
+    return this.evalBody(fn.body, activationEnv);
   }
 }
 
