@@ -45,7 +45,7 @@ export class Eva {
      * Block sequence of expressions
      */
     if (exp[0] === 'begin') {
-      return this.evaluateBlock(exp, new Environment({}, env));
+      return this.evalBlock(exp, new Environment({}, env));
     }
 
     /**
@@ -80,6 +80,21 @@ export class Eva {
     }
 
     /**
+     * Function declaration: (def square (x) (* x x))
+     */
+    if (exp[0] === 'def') {
+      const [, name, params, body] = exp;
+
+      const fn = {
+        params,
+        body,
+        env, // Closure
+      };
+
+      return env.define(name, fn);
+    }
+
+    /**
      * Function calls
      */
     if (Array.isArray(exp)) {
@@ -90,12 +105,35 @@ export class Eva {
       if (typeof fn === 'function') {
         return fn(...args);
       }
+
+      // 2. User defined function
+      if (typeof fn === 'object') {
+        const activationRecord: Record<string, any> = {};
+        fn.params.forEach((param: any, index: number) => {
+          activationRecord[param] = args[index];
+        });
+
+        const activationEnv = new Environment(
+          activationRecord,
+          fn.env // Lexical scope. if 'env' passed it will become dynamic scope
+        );
+
+        return this.evalFunctionBody(fn.body, activationEnv);
+      }
     }
 
     throw `Unimplemented: ${JSON.stringify(exp, undefined, 2)}`;
   }
 
-  private evaluateBlock(exp: any, env: Environment) {
+  private evalFunctionBody(body: any, env: Environment): any {
+    if (body[0] === 'begin') {
+      return this.evalBlock(body, env);
+    } else {
+      return this.eval(body, env);
+    }
+  }
+
+  private evalBlock(exp: any, env: Environment) {
     const [, ...expressions] = exp;
     let result: any;
     expressions.forEach((exp: any) => {
