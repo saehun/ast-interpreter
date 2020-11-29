@@ -170,6 +170,14 @@ export class Eva {
     }
 
     /**
+     * Super expressions: (super <class>)
+     */
+    if (exp[0] === 'super') {
+      const [, className] = exp;
+      return this.eval(className, env).parent;
+    }
+
+    /**
      * Property access: (prop <instance> <name>)
      */
     if (exp[0] === 'prop') {
@@ -238,7 +246,7 @@ function isString(exp: unknown): exp is string {
 }
 
 function isVariableName(exp: any) {
-  return typeof exp === 'string' && /^[+\-/=*><>a-zA-Z_]*$/.test(exp);
+  return typeof exp === 'string' && /^[+\-/=*><>a-zA-Z_0-9]*$/.test(exp);
 }
 
 const GlobalEnvironment = new Environment({
