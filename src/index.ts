@@ -1,13 +1,16 @@
 import { Environment } from './Environment';
+import { Transformer } from './Transformer';
 
 export class Eva {
   private global: Environment;
+  private transformer: Transformer;
 
   /**
    * Creates an Evan instance with the global environment.
    */
   constructor(global = GlobalEnvironment) {
     this.global = global;
+    this.transformer = new Transformer();
   }
 
   /**
@@ -23,6 +26,13 @@ export class Eva {
 
     if (isString(exp)) {
       return exp.slice(1, -1);
+    }
+
+    /**
+     * Increment
+     */
+    if (exp[0] === '++') {
+      return this.eval(this.transformer.transformIncrement(exp), env);
     }
 
     /**
@@ -67,6 +77,10 @@ export class Eva {
       }
     }
 
+    if (exp[0] === 'switch') {
+      return this.eval(this.transformer.transformSwitchToIf(exp), env);
+    }
+
     /**
      * while-expression
      */
@@ -80,14 +94,17 @@ export class Eva {
     }
 
     /**
+     * for-expression
+     */
+    if (exp[0] === 'for') {
+      return this.eval(this.transformer.transformForToWhile(exp), env);
+    }
+
+    /**
      * Function declaration: (def square (x) (* x x))
      */
     if (exp[0] === 'def') {
-      const [, name, params, body] = exp;
-
-      // JIT-transpile to a variable declaration
-      const varExp = ['var', name, ['lambda', params, body]];
-      return this.eval(varExp, env);
+      return this.eval(this.transformer.transformDefToVarLambda(exp), env);
     }
 
     /**
