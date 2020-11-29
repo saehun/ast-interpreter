@@ -187,6 +187,17 @@ export class Eva {
     }
 
     /**
+     * Module declaration
+     */
+    if (exp[0] === 'module') {
+      const [, name, body] = exp;
+      const moduleEnv = new Environment({}, env);
+      this.evalBody(body, moduleEnv);
+
+      return env.define(name, moduleEnv);
+    }
+
+    /**
      * Function calls
      */
     if (Array.isArray(exp)) {
